@@ -1,0 +1,40 @@
+//Check interface for documentation on methods
+
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Random;
+
+import javax.swing.DefaultListModel;
+
+public class Producer extends Consumer implements User {
+	
+	private DefaultListModel<Document> documentsUploaded = new DefaultListModel<Document>();
+
+	public Producer(String name, String password, String tag){
+		super(name, password, tag, "producer");
+	}
+	
+	@Override
+	public void act(Simulator n, SimulatorFrame gui){//need to shift this to network and make multiple acts
+		n.addDoc(createDocument(name+taste+(documentsUploaded.size()+1), taste));
+		super.act(n, gui);
+	}
+
+	//creates a new document based on a name and tag then adds it to documents_uploaded then returns
+	public Document createDocument(String name, String tag){
+		Document d = new Document(name, this, tag);
+		documentsUploaded.addElement(d);
+		//System.out.println("Document "+d.getName()+" created.");
+		like(d);
+		return d;
+	}
+	public Document getDocumentsUploaded(int i){
+		if (i >= 0 && i < documentsUploaded.size()) {
+			return documentsUploaded.getElementAt(i);
+		}
+		return null;
+
+	}
+
+}

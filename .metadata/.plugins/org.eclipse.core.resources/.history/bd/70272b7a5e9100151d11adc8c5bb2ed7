@@ -1,0 +1,62 @@
+//Check interface for documentation on methods
+
+
+import javax.swing.DefaultListModel;
+
+/**
+ * Type of user with the ability to do all actions of the consumer along with the creation of documents
+ * @author 
+ */
+public class Producer extends Consumer implements User {
+	
+	private DefaultListModel<Document> documentsUploaded = new DefaultListModel<Document>();
+	
+
+	/**
+	 * Constructor which initializes user with name,password,tag and automatically initiates type of user to producer
+	 * @param name
+	 * @param password
+	 * @param tag
+	 */
+	public Producer(String name, String password, String tag){
+		super(name, password, tag, "producer");
+	}
+	
+	@Override
+	public void act(Simulator n, SimulatorFrame gui){//need to shift this to network and make multiple acts
+		n.addDoc(createDocument(name+taste+(documentsUploaded.size()+1), taste));
+		gui.appendTextArea("Document '"+name+taste+(documentsUploaded.size()+1)+"' created!");
+		super.act(n, gui);
+	}
+
+	
+	/**
+	 * Method to create a Document with a name and a tag which might correspond to users tastes
+	 * Also likes the created document to increase search relevance
+	 * @param name
+	 * @param tag
+	 * @return this document 
+	 */
+	public Document createDocument(String name, String tag){
+		Document d = new Document(name, this, tag);
+		documentsUploaded.addElement(d);
+		//System.out.println("Document "+d.getName()+" created.");
+		like(d);
+		return d;
+		
+	}
+	
+	
+	/**
+	 * Method to get a specific document from the list of documents uploaded by current user
+	 * @return document at certain index of Arraylist record
+	 */
+	public Document getDocumentsUploaded(int i){
+		if (i >= 0 && i < documentsUploaded.size()) {
+			return documentsUploaded.getElementAt(i);
+		}
+		return null;
+
+	}
+
+}

@@ -1,0 +1,29 @@
+import java.util.*;
+public class Documents {
+	String tag;
+	User uploader;
+	int rank;//discussion on whether this should be a seperate class
+	ArrayList<User> users_liked = new ArrayList<User>();
+	
+	public Documents(User user, String tag){
+		this.uploader = user;
+		this.tag = tag;
+	}
+	public void display_liked(){
+		
+	}
+	public int getRank(){
+		return rank;
+	}
+	
+	public void increment_rank(){
+		rank ++;
+		System.out.println("Current rank:" + getRank());
+		
+	}
+	
+	
+	
+	
+    
+}

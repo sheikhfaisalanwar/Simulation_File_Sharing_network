@@ -1,0 +1,69 @@
+import java.util.ArrayList;
+
+public class Producers implements User {
+	
+	String name;
+	String password;
+
+	ArrayList<Documents> documents_liked = new ArrayList<Documents>();
+	ArrayList<Documents> documents_viewed = new ArrayList<Documents>();
+	ArrayList<Documents> documents_uploaded = new ArrayList<Documents>();
+	
+	ArrayList<User> users_following = new ArrayList<User>();
+	
+	ArrayList<String> tags_pref = new ArrayList<String>();
+	
+	public Producers(String name, String password){
+		this.name = name;
+		this.password = password;
+	}
+	
+
+	@Override
+	public void like() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void follow() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Documents display_viewed() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public User display_followed() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Documents display_liked() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void search(){
+		
+	}
+	
+	public User display_followers(){
+		return null;
+	}
+	
+	public Documents create_document(){
+		return null;
+		
+	}
+	public Documents display_uploaded(){
+		return null;
+		
+	}
+
+}

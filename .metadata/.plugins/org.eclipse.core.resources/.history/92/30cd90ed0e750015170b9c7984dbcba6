@@ -1,0 +1,20 @@
+
+public interface User {
+	
+	
+	
+	public void like();//method to like documents
+	public void follow();// method to follow users
+	public Documents display_viewed();//method to display the documents viewed
+	public User display_followed();//method to display users followed
+	public Documents display_liked();//method to display documents liked
+	public User display_followers();//method to display the people currently following
+
+	public void search();
+	
+	
+	
+	
+	
+
+}

@@ -1,0 +1,468 @@
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import java.util.ArrayList;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+
+import org.jfree.ui.RefineryUtilities;
+
+
+public class SimulatorFrame extends JFrame implements ActionListener{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	static private Simulator sim;
+	
+	private JMenuItem clearText;
+	private JMenuItem buttonInitializeSim,buttonAddTastes,buttonAddProducers, buttonAddConsumers;
+	private JMenuItem ViewFollowers, ViewDocsLiked, ViewNumFollowers, ViewFollowing, ViewDocsViewed, ViewGraph;
+	private JMenuItem ViewDocInfo;
+	private JMenu simMenu, userMenu, docMenu;
+	private JMenuBar menuBar;
+	
+	private JList users1, documents;
+	public JList topkdocs;
+	
+	private JTextArea information;
+	
+	private JPanel panel; //Main Panel
+	
+	private JPanel userPanel, documentPanel;
+	
+	public JPanel topk; //NEED TO MAKE A GETTER AND BE USED IN CONSUMER INSTEAD OF DIRECT USE
+	
+	//private JPanel centre; //Panel to hold User+Document+Topk together
+	
+	private JScrollPane UserScroller, DocumentScroller, InfoScroller, TopkScroller;
+	
+	private int iterations;
+	
+	private Graph chart;
+	
+	
+	
+	/**
+	 * Constructor:
+	 * Initialize simulation
+	 * Define dimension, initialize menu bar, buttons, text fields containing JLists, scroll bars
+	 * Add Action Listener
+	 * Position GUI components inside the layout
+	 * 
+	 */
+	public SimulatorFrame() {
+		super();
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setSize(900, 600);
+		
+		//Text Area that will be used as a console output to display information
+		information = new JTextArea(10, 10);
+		information.setBorder(new EmptyBorder(10, 10, 10, 10));
+		information.setEditable(false);
+		information.setText("Simulation Cycle 0\nPlease Select 'Simulate n cycles' to begin\n\n");
+		
+		
+		panel = new JPanel(new BorderLayout()); // Main panel to hold all other panels
+		userPanel = new JPanel(new BorderLayout()); //User Panel
+		topk = new JPanel(new BorderLayout()); //Top Documents Panel
+		documentPanel = new JPanel(new BorderLayout()); //All Documents Panel
+		
+		add(panel);
+		
+		//Populating User Panel with users in simulator that can be selected
+		users1 = new JList<>(sim.users);
+		userPanel.add(new JLabel("User(s)"), BorderLayout.NORTH);
+		userPanel.add(users1, BorderLayout.CENTER);
+		users1.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		userPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+		
+		//Populating Document Panel with all documents present in the simulator that can be selected
+		documents = new JList<>(sim.docs);
+		documentPanel.add(new JLabel("Document(s)"), BorderLayout.NORTH);
+		documentPanel.add(documents, BorderLayout.CENTER);
+		documents.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		documentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+		
+		//Convert panels to Scroll Panes so they don't have to be resized (scroll bars added)
+		UserScroller = new JScrollPane(userPanel);
+		DocumentScroller = new JScrollPane(documentPanel);
+		TopkScroller = new JScrollPane(topk);
+		
+		//Set panels sizes to be of equal widths
+		UserScroller.setPreferredSize(new Dimension(300,300));
+		DocumentScroller.setPreferredSize(new Dimension(300,300));
+		TopkScroller.setPreferredSize(new Dimension(300,300));
+		
+		//Panels added to center area of window
+		panel.add(UserScroller, BorderLayout.WEST);
+		panel.add(DocumentScroller, BorderLayout.CENTER);
+		panel.add(TopkScroller, BorderLayout.EAST);
+
+		//Convert information panel to Scroll Pane and set at the bottom of window
+		InfoScroller = new JScrollPane(information);
+		panel.add(InfoScroller, BorderLayout.SOUTH);
+		
+				
+		//Menu initializations
+		menuBar = new JMenuBar();
+		this.setJMenuBar(menuBar);
+		
+		simMenu = new JMenu("Simulator");
+		userMenu = new JMenu("User");
+		docMenu = new JMenu("Document");
+		
+		
+		menuBar.add(simMenu);
+		menuBar.add(userMenu);
+		menuBar.add(docMenu);
+		
+		//Button Initializations
+		clearText = new JMenuItem("Clear Text Area");
+		
+		buttonInitializeSim = new JMenuItem("Simulate n cycles");
+		buttonAddTastes = new JMenuItem("Add tastes");
+		buttonAddProducers = new JMenuItem("Add producers");
+		buttonAddConsumers = new JMenuItem("Add consumers");
+		
+		ViewFollowers = new JMenuItem("View Followers");
+		ViewDocsLiked = new JMenuItem("View Documents Likes");
+		ViewNumFollowers = new JMenuItem("Number of Followers");
+		ViewFollowing = new JMenuItem("View Following");
+		ViewDocsViewed = new JMenuItem("View Documents Viewed");
+		ViewGraph = new JMenuItem("View Payoff Graph");
+		
+		
+		ViewDocInfo = new JMenuItem("View Likers");
+		
+		//Adding action listeners
+		clearText.addActionListener(this);
+		
+		buttonInitializeSim.addActionListener(this);
+		buttonAddTastes.addActionListener(this);
+		buttonAddProducers.addActionListener(this);
+		buttonAddConsumers.addActionListener(this);
+		
+		ViewFollowers.addActionListener(this);
+		ViewDocsLiked.addActionListener(this);
+		ViewNumFollowers.addActionListener(this);
+		ViewFollowing.addActionListener(this);
+		ViewDocsViewed.addActionListener(this);
+		ViewGraph.addActionListener(this);
+		
+		ViewDocInfo.addActionListener(this);
+		
+		
+		//Add buttons to menus
+		simMenu.add(buttonInitializeSim);
+		simMenu.add(clearText);
+		simMenu.add(buttonAddTastes);
+		simMenu.add(buttonAddProducers);
+		simMenu.add(buttonAddConsumers);
+		
+		userMenu.add(ViewDocsLiked);
+		userMenu.add(ViewFollowers);
+		userMenu.add(ViewNumFollowers);
+		userMenu.add(ViewFollowing);
+		userMenu.add(ViewDocsViewed);
+		userMenu.add(ViewGraph);
+		
+		docMenu.add(ViewDocInfo);
+		
+		//Button(s) that user should be able to use before initializing simulation
+		ViewDocInfo.setEnabled(false);
+		//this.pack();
+		this.setVisible(true);
+	}
+	
+	//Return User Panel
+	public JPanel getListPanel(){
+		return userPanel;
+	}
+	
+	//Return Main Panel
+	public JPanel getGUIPanel(){
+		return panel;
+	}
+	
+	//Set Text Area to a particular string (Overwrites whatever is already written)
+	public void setTextArea(String text){
+		information.setText(text);
+	}
+	
+	//Append Text Area with string provided (Add onto whatever is already written)
+	public void appendTextArea(String text){
+		information.append(text);
+	}
+	
+	
+	/**
+	 * Method to get the number of iterations that were implemented during simulations
+	 * @return integer value 
+	 */
+	public int getIterations(){
+		return iterations;
+	}
+	
+	
+	
+	/**
+	 * Method to set iterations during the initialization of simulation
+	 * @param i set the value of number of times we want to repeat the simulation for
+	 */
+	public void setIterations(int i){
+		iterations = i;
+	}
+	
+	
+	
+	/** 
+	 * Defines all the actions that would be implemented when buttons are pressed
+	 * @param event that triggers the action
+	 */
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		
+		//Handles Simulator initializations
+		if (event.getSource() == buttonInitializeSim) {
+			ViewDocInfo.setEnabled(true);
+			sim.setK(Integer.parseInt(JOptionPane.showInputDialog("Enter the top k documents to be viewed: ")));
+			setIterations(Integer.parseInt(JOptionPane.showInputDialog("Enter number of simulation iterations desired: ")));
+			sim.simulate(iterations, this);
+		}
+		
+		
+		//Clears Text Field (Window Console Output cleared)
+		else if(event.getSource() == clearText){
+			setTextArea("");
+		}
+		
+		//Add more tastes [First choose number of tastes -> make tastes (including new ones)]
+		else if(event.getSource() == buttonAddTastes){
+			int tastes = Integer.parseInt(JOptionPane.showInputDialog("Enter number of different tastes: "));
+
+			for (int i = 1; i <= tastes; i++) {
+				sim.getTastesList().add(JOptionPane.showInputDialog("Enter taste #" + i + ": "));
+			}
+		}
+		
+		//Handles creation of  new user(s) of type Producer
+		else if(event.getSource() == buttonAddProducers){
+			multipleUsers("producer", sim);
+		}
+		
+		//Handles creation of single new user(s) of type Consumer
+		else if(event.getSource() == buttonAddConsumers){
+			multipleUsers("consumer", sim);
+		}
+		
+		//View selected User's Follower Count in Text Area
+		else if(event.getSource() == ViewNumFollowers){
+			User selected = sim.getUsers(users1.getSelectedIndex());
+			if (selected == null){
+				 JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			appendTextArea(selected.getName()+" has "+selected.getNumFollowers()+" follower(s)!\n");
+		}
+		
+		//View selected User's Followers' names in Text Area
+		else if(event.getSource() == ViewFollowers){
+			User selected = sim.getUsers(users1.getSelectedIndex());
+			if (selected == null){
+				 JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			//JOptionPane.showMessageDialog(null, selected.getName()+" has "+selected.getNumFollowers()+" follower(s)!", "Followers", JOptionPane.INFORMATION_MESSAGE);
+			if(selected.getFollowers().size() == 0) {
+				JOptionPane.showMessageDialog(null, selected.getName()+" has no followers yet!", "No Followers", JOptionPane.INFORMATION_MESSAGE);
+			}
+			else{
+				String s = "";
+				appendTextArea(selected.getName()+"'s Follower(s):\n");
+				for (User user : selected.getFollowers()){
+					s = s+user.getName()+", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				appendTextArea(s+"\n");
+			}
+		}
+		
+		//View users being followed by selected User
+		else if(event.getSource() == ViewFollowing){
+			User selected = sim.getUsers(users1.getSelectedIndex());
+			if (selected == null){
+				 JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			if(selected.getFollowers().size() == 0) {
+				JOptionPane.showMessageDialog(null, selected.getName()+" has not followed anyone yet!", "No Followers", JOptionPane.INFORMATION_MESSAGE);
+			}
+			else{
+				String s = "";
+				appendTextArea(selected.getName()+" has Followed:\n");
+				for (User user : selected.getFollowing()){
+					s = s+user.getName()+", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				appendTextArea(s+"\n");
+			}
+		}
+		
+		//View selected User's liked Documents
+		else if(event.getSource() == ViewDocsLiked){
+			User selected = sim.getUsers(users1.getSelectedIndex());
+			if (selected == null){
+				 JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			if(selected.getLiked().size() == 0) {
+				JOptionPane.showMessageDialog(null, selected.getName()+" has not liked any documents yet!", "No Document Liked", JOptionPane.INFORMATION_MESSAGE);
+			}
+			else{
+				String s = "";
+				appendTextArea(selected.getName()+" liked the following Document(s):\n");
+				for (Document doc : selected.getLiked()){
+					s = s+doc.getName()+", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				appendTextArea(s+"\n");
+			}
+			
+		}
+		
+		//View selected User's Documents viewed
+		else if(event.getSource() == ViewDocsViewed){
+			User selected = sim.getUsers(users1.getSelectedIndex());
+			if (selected == null){
+				 JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			if(selected.getLiked().size() == 0) {
+				JOptionPane.showMessageDialog(null, selected.getName()+" has not viewed any documents yet!", "No Document Liked", JOptionPane.INFORMATION_MESSAGE);
+			}
+			else{
+				String s = "";
+				appendTextArea(selected.getName()+" viewed the following Documents(s):\n");
+				for (Document doc : selected.getViewed()){
+					s = s+doc.getName()+", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				appendTextArea(s+"\n");
+			}
+			
+		}
+		
+		//View payoff graph of selected user
+		else if(event.getSource()== ViewGraph){
+			User selected = sim.getUsers(users1.getSelectedIndex());
+			if (selected == null){
+				 JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			else{
+				chart = new Graph("User:" + selected.getName()+ "","Payoff vs Iterations", selected, this);
+				chart.pack( );
+			    RefineryUtilities.centerFrameOnScreen( chart );
+			    chart.setVisible(true);
+			    chart.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+			}
+			
+		}
+		
+		//View selected Document(s)'s likers' Names (Can select document from All Document and Top Document)
+		else if(event.getSource() == ViewDocInfo){
+			Document selected1 = sim.getDocs(documents.getSelectedIndex());
+			Document selected2 = sim.getDocs(topkdocs.getSelectedIndex());
+			if(selected1 == null && selected2 == null){
+				JOptionPane.showMessageDialog(null, "NO DOCUMENT(S) SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			if(selected1 == null && selected2 != null){
+				appendTextArea("Top Document "+selected2.getLikersString());
+			}
+			else if(selected2 == null && selected1 != null){
+				appendTextArea("Document "+selected1.getLikersString());
+			}
+			else{
+				appendTextArea("Top Document "+selected2.getLikersString());
+				appendTextArea("Document "+selected1.getLikersString());
+
+			}
+		}
+	}
+	
+	
+	/**
+	 * Method to add multiple users at the start of the simulation
+	 * @param a which describes the type( Producer or Consumer)
+	 * @param s simulation environment which the user is being added to
+	 */
+	public void multipleUsers(String a, Simulator s){
+		int numUsers = Integer.parseInt(JOptionPane.showInputDialog("Enter number of "+a+"s:"));
+		
+		
+		for(int i = 1;i <= numUsers;i++){
+			
+			//prompt user for name, password and taste for each user
+			String name = JOptionPane.showInputDialog("Enter "+a+" #"+i+"'s name: ");
+			String password = JOptionPane.showInputDialog("Enter "+name+"'s password to be set: ");
+			
+			//Options pane doesn't accept arraylist so casting that into ListModel takes a bit of work
+			ArrayList<String> tasteOptions = s.getTastesList();	
+			tasteOptions.add("Enter new taste");
+			Object[] options = tasteOptions.toArray();
+		
+			Object value = JOptionPane.showInputDialog(null, 
+			                                           "Pick a taste", 
+			                                           "Tastes", 
+			                                            JOptionPane.QUESTION_MESSAGE, 
+			                                            null,
+			                                            options, 
+			                                            options[0]);
+	
+			String taste = "";
+			if (value == "Enter new taste")
+				taste = JOptionPane.showInputDialog("Enter taste: ");
+			else{
+				int index = s.getTastesList().indexOf(value);
+				taste = s.getTastesList().get(index);
+			}
+			User u;
+			if(a.equals("producer")){
+				u = new Producer(name, password, taste);
+			}
+			else{
+				u = new Consumer(name, password, taste);
+			}
+			sim.addUser(u);
+			panel.revalidate();
+			panel.repaint();
+		}
+			
+	}
+	
+	
+	
+	
+	/* 1.Populate the Network with a few hardcoded users 
+	 
+	 */
+	
+	
+	public static void main(String args[]){
+		sim = new Simulator("Network 1");
+		sim.addUser(new Consumer("c1","pw","toy"));
+		sim.addUser(new Consumer("c2","pw","car"));
+		sim.addUser(new Consumer("c3","pw","book"));
+		sim.addUser(new Consumer("c4","pw","toy"));
+		sim.addUser(new Consumer("c5","pw","car"));
+		sim.addUser(new Consumer("c6","pw","book"));
+				
+		sim.addUser(new Producer("p1","pw","toy"));
+		sim.addUser(new Producer("p2","pw","car"));
+		sim.addUser(new Producer("p3","pw","book"));
+		sim.addUser(new Producer("p4","pw","toy"));
+		sim.addUser(new Producer("p5","pw","car"));
+		sim.addUser(new Producer("p6","pw","book"));
+		new SimulatorFrame();
+	}
+}

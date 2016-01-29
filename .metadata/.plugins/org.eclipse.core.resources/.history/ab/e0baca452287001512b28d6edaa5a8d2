@@ -1,0 +1,171 @@
+import java.util.ArrayList;
+import java.util.Collections;
+
+public class Consumer implements User {
+	
+	protected String name;
+	private String password;
+	protected String taste;
+	protected String type;
+	protected String s;
+	protected ArrayList<Document> documentsLiked = new ArrayList<Document>();
+	protected ArrayList<Document> documentsViewed = new ArrayList<Document>();
+	protected ArrayList<User> following = new ArrayList<User>();
+	protected ArrayList<User> followers = new ArrayList<User>();
+	
+	private ArrayList<Document> results = new ArrayList<Document>();
+
+	public Consumer(String name, String password, String tag){
+		this(name, password, tag, "consumer");
+	}
+	
+	public Consumer(String name, String password, String tag, String type){
+		this.name = name;
+		this.password = password;
+		this.taste = tag;
+		this.type = type;
+	}
+
+	@Override
+	public void act(Simulator n){
+		if (n.getDocs().size() == 0) System.out.println("There are no documents yet.");
+		else{
+			System.out.println("Searching...");
+			search(n.getDocs(), 10);
+		}
+	}
+
+	@Override
+	public void like(Document document) {//add current user liking it to the documents list(see document add_user method)
+		if (!(documentsLiked.contains(document))){
+			documentsLiked.add(document);
+			document.like(this);
+			System.out.println("   " + document.getName()+" by " + document.getUploader().getName() + " liked!");
+		}
+	}
+
+	@Override
+	public void follow(User user) {
+		if ((!(following.contains(user))) && (!(user == this))){
+			following.add(user);
+			user.addFollower(this);
+			System.out.println("   " + user.getName() + " followed!");
+		}
+	}
+
+	@Override
+	public void addFollower(User user){
+		followers.add(user);
+	}
+
+	@Override
+	public ArrayList<Document> getViewed() {
+		return documentsViewed;
+	}
+
+	@Override
+	public ArrayList<User> getFollowing() {
+		return following;
+	}
+
+	@Override
+	public ArrayList<Document> getLiked() {
+		return documentsLiked;
+	}
+
+	@Override
+	public ArrayList<User> getFollowers() {
+		return followers;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public void search(ArrayList<Document> docs, int k) {
+		
+		results.clear();
+		
+		for (Document d : docs){
+			results.add(d);
+		}
+				
+		//for each document, calculate the relevance with a few steps
+		
+		for (Document d : results){
+			//STEP 0: reset search relevance
+			d.setSearchRelevance(0);
+			//STEP 1: give one point for each like the document has
+			d.increaseSearchRelevanceBy(d.getNumLikes());
+			//STEP 2: give two points for each follower the uploader of the document has
+			d.increaseSearchRelevanceBy(2 * d.getUploader().getNumFollowers());
+			//STEP 3: if the document tag matches the taste of the user, multiply the points by 2
+			if (d.getTag().equals(taste)){
+				d.increaseSearchRelevanceBy(d.getSearchRelevance());
+				//STEP 4.1: if matching tag and the document hasn't been viewed yet, multiple the points by 100 to guarantee it shows up in the search
+				if (!(documentsViewed.contains(d))){
+					d.increaseSearchRelevanceBy(99 * d.getSearchRelevance());
+				}
+			}
+			//STEP 4.2: if not matching tag and the document hasn't been viewed yet, multiple the points by 2
+			if (!(documentsViewed.contains(d))){
+				d.increaseSearchRelevanceBy(d.getSearchRelevance());
+			}
+		}
+						
+		//sort results by search relevance which we just calculated
+
+		Collections.sort(results);
+				
+		if (results.size() == 0) System.out.println("No results found.");
+		else{
+			
+			int resultsSize = k;
+			if (k > results.size()) resultsSize = results.size();
+			
+			System.out.println("Here are the top " + resultsSize + " documents:");
+
+			//payoff: 1 point for each document in the top k that matches the user's taste and hasn't been viewed yet
+			int payoff = 0;
+			
+			Document r;
+			for (int i = 0; i < resultsSize; i++){
+				r = results.get(i);
+				System.out.println((i+1) + ". " + r.getName() + "   by " + r.getUploader().getName() + "   " + r.getNumLikes() + " likes   SR: " + r.getSearchRelevance() + "   " + r.getLikersString());
+				if (documentsLiked.contains(r)) System.out.println("   You like this.");
+				if (!documentsViewed.contains(r)){
+					documentsViewed.add(r);
+					if (r.getTag().equals(taste)){
+						like(r);
+						for (User u : r.getLikers()){
+							s= s + " "+ u.getName();
+							follow(u);
+						}
+						System.out.println("Users Followed: " + s);
+						payoff++;
+					}
+				}
+			}
+			
+			System.out.println("\npayoff: " + payoff + "\n");
+			
+		}
+		
+	}
+	
+	@Override
+	public String getName(){
+		return name;
+	}
+
+	public String getTaste(){
+		return taste;
+	}
+	
+	public String getType(){
+		return type;
+	}
+	
+	public int getNumFollowers(){
+		return followers.size();
+	}
+
+}

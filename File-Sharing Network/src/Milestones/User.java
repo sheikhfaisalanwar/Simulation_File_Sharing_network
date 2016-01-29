@@ -1,0 +1,134 @@
+package Milestones;
+import java.util.ArrayList;
+import javax.swing.DefaultListModel;
+
+
+
+/**
+ * Interface to classify all types of users and define common methods to be implemented in them
+ * @author Sheikh Faisal Anwar, Vanja Veselinovic, Nicholas Robidoux, Muhammad Kashif Siddiqui
+ *
+ */
+public interface User {	
+	
+	/**
+	 * Ability to like a particular document 
+	 * Add document to the list of liked documents
+	 * @param document
+	 */
+	public boolean like(Document document);
+	
+	
+	
+	/**
+	 * Ability to follow a certain user
+	 * Add user to the list of other users being followed by this user
+	 * 
+	 * @param user
+	 */
+	public boolean follow(User user);
+	
+	
+	/** 
+	 * Method to display the documents viewed
+	 * @return the array list of documents that have already been viewed
+	 */
+	public ArrayList<Document> getViewed();
+	
+	
+	/**
+	 * Method add the some user that followed the current user object to the array list record
+	 * @param user
+	 */
+	public void addFollower(User user);
+	
+	
+	/**
+	 * method to display users followed
+	 * @return ArrayList of users
+	 */
+	public ArrayList<User> getFollowing();
+	
+	
+	/**
+	 * Method to display documents liked
+	 * @return ArrayList of Documents
+	 */
+	public ArrayList<Document> getLiked();
+	
+	
+	
+	
+	/**
+	 * Method to display the people currently following
+	 * @return the array list containing this record
+	 */
+	public ArrayList<User> getFollowers();
+	
+	
+	
+	/** Getter for user's name
+	 * @return String name of user
+	 */
+	public String getName();
+	
+	
+	/**
+	 * @return "Consumer" or "Producer" depending on the type of the user
+	 */
+	public String getType();
+	
+	
+	/**
+	 * Method to return taste associated with the current user
+	 * @return String of taste
+	 */
+	public String getTaste();
+	
+	
+	/**
+	 * Return the array list that gets populated at each iteration search is implemented for the user
+	 * @return ArrayList of integers
+	 */
+	public ArrayList<Integer> getPayoff();
+	
+	
+	
+	/**
+	 * Method to get the no. of users following the current user
+	 * @return integer value of size of array list of followers
+	 */
+	public int getNumFollowers();
+	
+	
+	/**
+	 * 1st search algorithm implemented
+	 * @param d List of documents being searched
+	 * @param k Top k documents desired by the user
+	 * @param gui frame in which simulation is taking place
+	 * @return List of Documents matching search criteria
+	 */
+	public DefaultListModel<Document> search(DefaultListModel<Document> d, int k, Simulator sim, SimulatorFrame gui);
+	
+	
+	/**
+	 * Method that describes what tasks the user has to perform when it is selected
+	 * Mainly search and like a document
+	 * For a Producer this method also creates a new document 
+	 * @param n Simulation environment in which act is being implemented
+	 * @param gui Frame in which act is being implemented
+	 */
+	public void act(Simulator n, SimulatorFrame gui);
+	
+	/**
+	 * Method to set the ranking strategy of the user
+	 * @param rs The new ranking strategy
+	 */
+	
+	public void setRankingStrategy(RankingStrategy rs);
+
+	public void appendPayoff(int payoff);
+
+
+
+}

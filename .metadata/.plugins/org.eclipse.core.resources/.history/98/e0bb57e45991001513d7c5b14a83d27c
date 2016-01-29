@@ -1,0 +1,240 @@
+import java.awt.BorderLayout;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import javax.swing.DefaultListModel;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.ListSelectionModel;
+import javax.swing.border.EmptyBorder;
+
+/*<h1> Consumer </h1>
+ * Type of user with ability like and search documents and follow users
+ */ 
+
+
+
+public class Consumer implements User {
+	
+	protected String name;
+	private String password;
+	protected String taste;
+	protected String type;
+	protected String s;
+	protected ArrayList<Document> documentsLiked = new ArrayList<Document>();
+	protected ArrayList<Document> documentsViewed = new ArrayList<Document>();
+	protected ArrayList<User> following = new ArrayList<User>();
+	protected ArrayList<User> followers = new ArrayList<User>();
+	private ArrayList<Integer> payoffs;
+
+	public DefaultListModel<Document> results = new DefaultListModel<Document>();
+	
+	/**
+	 * Constructor which initializes user with name,password,tag and automatically initiates type of user to consumer
+	 * @param name
+	 * @param password
+	 * @param tag
+	 */
+	public Consumer(String name, String password, String tag){
+		this(name, password, tag, "consumer");
+	}
+	
+	/**
+	 * Initialzes all variables like above constructor with the addition of an Array list of payoffs 
+	 * @param name
+	 * @param password
+	 * @param tag
+	 * @param type
+	 */
+	public Consumer(String name, String password, String tag, String type){
+		this.name = name;
+		this.password = password;
+		this.taste = tag;
+		this.type = type;
+		payoffs = new ArrayList<Integer>();
+	}
+
+	/* 
+	 * 
+	 */
+	@Override
+	public void act(Simulator s, SimulatorFrame gui){
+		if (s.docs.size() == 0) gui.appendTextArea("There are no documents yet.\n");
+		else{
+			search(s.docs, s.getK(), gui);
+		}
+	}
+
+	@Override
+	public void like(Document document) {
+		if (!(documentsLiked.contains(document))){
+			documentsLiked.add(document);
+			document.like(this);
+		}
+	}
+
+	@Override
+	public void follow(User user) {
+		if ((!(following.contains(user))) && (!(user == this))){
+			following.add(user);
+			user.addFollower(this);
+		}
+	}
+
+	@Override
+	public void addFollower(User user){
+		followers.add(user);
+	}
+
+	@Override
+	public ArrayList<Document> getViewed() {
+		return documentsViewed;
+	}
+
+	@Override
+	public ArrayList<User> getFollowing() {
+		return following;
+	}
+
+	@Override
+	public ArrayList<Document> getLiked() {
+		return documentsLiked;
+	}
+
+	@Override
+	public ArrayList<User> getFollowers() {
+		return followers;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public DefaultListModel<Document> search(DefaultListModel<Document> docs, int k, SimulatorFrame gui) {
+				
+		results.clear(); //Clear Results DLM so as to not have duplicates by the end
+		
+		for (int i = 0; i < docs.size(); i++){
+			results.addElement(docs.get(i));
+		}
+				
+		//for each document, calculate the relevance with a few steps
+		for (int i = 0; i < results.size(); i++){
+			Document d = results.get(i);
+			//STEP 0: reset search relevance
+			d.setSearchRelevance(0);
+			//STEP 1: give one point for each like the document has
+			d.increaseSearchRelevanceBy(d.getNumLikes());
+			//STEP 2: give two points for each follower the uploader of the document has
+			d.increaseSearchRelevanceBy(2 * d.getUploader().getNumFollowers());
+			//STEP 3: if the document tag matches the taste of the user, multiply the points by 2
+			if (d.getTag().equals(taste)){
+				d.increaseSearchRelevanceBy(d.getSearchRelevance());
+				//STEP 4.1: if matching tag and the document hasn't been viewed yet, multiple the points by 100 to guarantee it shows up in the search
+				if (!(documentsViewed.contains(d))){
+					d.increaseSearchRelevanceBy(99 * d.getSearchRelevance());
+				}
+			}
+			//STEP 4.2: if not matching tag and the document hasn't been viewed yet, multiple the points by 2
+			if (!(documentsViewed.contains(d))){
+				d.increaseSearchRelevanceBy(d.getSearchRelevance());
+			}
+		}
+						
+		//sort results by search relevance which we just calculated
+		ArrayList<Document> arrayList = Collections.list(results.elements()); //Put elements of DLM to ArrayList
+		Collections.sort(arrayList); // sort Array
+		results.clear(); // remove all elements
+
+		//Add the Top K (from parameter of this method) Documents from Array back into Results DLM
+		int x = 0;
+		for(Document o:arrayList){
+			if (x<k) {
+				results.addElement(o); 
+				x++;
+			}
+		} // Documents Added
+				
+		if (results.size() == 0) gui.appendTextArea("No results found.\n");
+		else{
+			int resultsSize = k;
+			if (k > results.size()) resultsSize = results.size();
+
+			//payoff: 1 point for each document in the top k that matches the user's taste and hasn't been viewed yet
+			int payoff = 0;
+			
+			//Not entirely sure whats happening here... need fixing (Is following same person more than once etc)
+			Document r;
+			for (int i = 0; i < resultsSize; i++){
+				r = results.get(i);
+				r.setMessage("");
+				if (documentsLiked.contains(r)) {
+					//r.appendMessage("You like this.");
+					gui.appendTextArea("Already liked the document: '"+r.getName()+"'.\n");
+				}
+				if (!documentsViewed.contains(r)){
+					documentsViewed.add(r);
+					if (r.getTag().equals(taste)){
+						like(r);
+						//r.appendMessage("liked!");
+						gui.appendTextArea("Liked the document: '"+r.getName()+"'.\n");
+						for (User u : r.getLikers()){
+							//s= s + " "+ u.getName();
+							follow(u);
+							if( !(this.getName().equals(u.getName())) ){
+							gui.appendTextArea("Followed the User: "+u.getName()+"[ "+u.getType()+"] of taste '"+u.getTaste()+"'.\n");
+							}
+							//r.appendMessage(u.getName() + " followed!");
+
+						}
+						//System.out.println("Users Followed: " + s);
+						payoff++;
+					}
+				}
+				//gui.getListPanel().add(new DocPanel(r).getPanel());
+			}
+			
+			//System.out.println("\npayoff: " + payoff + "\n");
+			gui.appendTextArea(" \n");
+			payoffs.add(payoff);
+			
+		}
+		
+		//Add a Panel to GUI to display Top K Documents separate from All Documents
+		gui.topkdocs = new JList(results);
+		gui.topk.add(new JLabel("Top Document(s)"), BorderLayout.NORTH);
+		gui.topk.add(gui.topkdocs, BorderLayout.CENTER);
+		gui.topkdocs.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		gui.topk.setBorder(new EmptyBorder(5, 5, 5, 5));
+		
+		//Repaint GUI
+		gui.getGUIPanel().revalidate();
+		gui.getGUIPanel().repaint();
+		return results;
+	}
+	
+	@Override
+	public String getName(){
+		return name;
+	}
+
+	public String getTaste(){
+		return taste;
+	}
+	
+	public String getType(){
+		return type;
+	}
+	
+	public int getNumFollowers(){
+		return followers.size();
+	}
+	public ArrayList<Integer> getPayoff(){
+		return payoffs;
+	}
+	
+	
+	
+	public String toString() {
+		return " "+name +" [ "+type+" ], Taste: "+taste+"   ";
+	}
+
+}

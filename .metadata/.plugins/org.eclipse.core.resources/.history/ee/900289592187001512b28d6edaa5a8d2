@@ -1,0 +1,296 @@
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import java.util.ArrayList;
+
+import java.awt.FlowLayout;
+
+import java.awt.GridLayout;
+
+import javax.swing.*;
+
+
+public class SimulatorFrame extends JFrame implements ActionListener{
+
+	private static ArrayList<String> tastesList;
+	private JButton button1,button2,button3,button4,button5,button6;
+	static Simulator sim = new Simulator("Network 1");
+	
+	
+	public SimulatorFrame(){
+		JFrame menuFrame = new JFrame("File Sharing Network Simulator");
+		
+		JPanel panel = new JPanel();
+		panel.setLayout(new GridLayout());
+		//JLabel label1 = new JLabel("Start Simulation");
+		
+		//Button Initializations
+		button1 = new JButton();
+		button2 = new JButton();
+		button3 = new JButton();
+		button4 = new JButton();
+		button5 = new JButton();
+		button6 = new JButton();
+		
+		
+		//Adding labels and what the buttons will do
+		button1.setText("Initialize Simulation");
+		button1.addActionListener(this);
+		button2.setText("Add user");
+		button2.addActionListener(this);
+		button3.setText("View Documents in Network");
+		button3.addActionListener(this);
+		button4.setText("View Users in Network");
+		button4.addActionListener(this);
+		button5.setText("View number of likes of Document");
+		button5.addActionListener(this);
+		button6.setText("View followers of User");
+		button5.addActionListener(this);
+		button2.setEnabled(false);
+		button3.setEnabled(false);
+		button4.setEnabled(false);
+		button5.setEnabled(false);
+		button6.setEnabled(false);
+		
+		//adding buttons to panel
+		panel.add(button1);
+		panel.add(button2);
+		panel.add(button3);
+		panel.add(button4);
+		panel.add(button5);
+		panel.add(button6);
+		
+		
+		menuFrame.add(panel);
+		menuFrame.setSize(1200,200);
+		menuFrame.setVisible(true);
+		menuFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		//this.sim_prompt();
+	}
+	/* Defines all the actions that would be implemented when buttons are pressed*/
+	
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		if (event.getSource() == button1) {//Handles Simulator initializations
+			data_prompt();
+			button2.setEnabled(true);
+			button3.setEnabled(true);
+			button4.setEnabled(true);
+			button5.setEnabled(true);
+			button6.setEnabled(true);
+		}
+		else if(event.getSource() == button2){//Handles creation of single new user
+			String type_u = JOptionPane.showInputDialog("Type Producer to create a Producer or Consumer to create a Consumer ");
+			singleUser(type_u);
+		}
+		else if(event.getSource() == button3){// Handles the viewing of Documents
+			/*StringBuilder builder = new StringBuilder("<html>"); 
+			for (int i = 0; i < sim.getDocs().size(); i++) {
+			    builder.append(sim.getDocs().get(i).getName());
+			    builder.append("<br>");
+			}
+			builder.append("</html>");
+			JOptionPane.showMessageDialog
+			    (null, builder.toString(), "Printing Documents", JOptionPane.INFORMATION_MESSAGE);*/
+			
+			
+			
+			String output = " ";
+			for(int i = 0; i<sim.getDocs().size(); i++){
+			    
+			    String everything2 = sim.getDocs().get(i).getName().toString();
+
+			    output +=  (i+1)+ ". "+ everything2 + "\n";       
+			}
+			JOptionPane.showMessageDialog(null, output);
+		}
+		
+		else if(event.getSource() == button4){//Handles viewing of Users
+			String output2 = "";
+			for(int i = 0; i<sim.getUsers().size(); i++){
+			    
+			    String everything2 = sim.getUsers().get(i).getName().toString();
+
+			    output2 += (i+1)+ ". "+ everything2 + "\n";       
+			}
+			JOptionPane.showMessageDialog(null, output2);
+			
+		}
+		else if(event.getSource() == button5){//Handles viewing number likes of selected Document
+
+			//Object[] docs = sim.getDocs().toArray();
+			ArrayList<String> doc_names = new ArrayList<>();
+			for(int i =0; i >sim.getDocs().size(); i++){
+				
+				doc_names.add(sim.getDocs().get(i).getName());
+			}
+			Object[] options = doc_names.toArray();
+			Object value = JOptionPane.showInputDialog(null, 
+			                                           "Pick a Document to view likes of", 
+			                                           "Document", 
+			                                            JOptionPane.QUESTION_MESSAGE, 
+			                                            null,
+			                                            options, 
+			                                            options[0]);
+
+			int index = sim.getDocs().indexOf(value);
+			Document doc = sim.getDocs().get(index);
+			String output3 = "";
+			output3 += doc.getNumLikes();
+			JOptionPane.showMessageDialog(null, output3);
+			
+		}
+		else if(event.getSource() == button6){//handles viewing of followers
+			Object[] users = sim.getUsers().toArray();
+			Object value = JOptionPane.showInputDialog(null, 
+			                                           "Pick a User to view their followers", 
+			                                           "Users", 
+			                                            JOptionPane.QUESTION_MESSAGE, 
+			                                            null,
+			                                            users, 
+			                                            users[0]);
+
+			int index = sim.getUsers().indexOf(value);
+			User u = sim.getUsers().get(index);
+			String output4 = "";
+			for(int i = 0; i<u.getFollowers().size(); i++){
+			    
+			    String everything3 = u.getFollowers().get(i).toString();
+
+			    output4 += i +" "+ everything3 + "\n";       
+			}
+			JOptionPane.showMessageDialog(null, output4);
+			
+		}
+		
+		}
+	
+	
+
+
+
+
+
+//method to add multiple users at the start of the simulation
+public static void multipleUsers(String a){
+	@SuppressWarnings("resource")
+	
+	int number_producers = Integer.parseInt(JOptionPane.showInputDialog("Enter number of "+a+" :"));
+	
+	
+	for(int i = 1;i <= number_producers;i++){
+		
+		//prompt user for name, password and taste for each user
+		String name = JOptionPane.showInputDialog("Enter "+a+" #"+i+"'s name: ");
+		
+		String password = JOptionPane.showInputDialog("Enter "+name+"'s password to be set: ");
+		
+		
+		//Options pane doesnt accept arraylist so casting that into ListModel takes a bit of work
+		
+		
+		Object[] options = tastesList.toArray();
+		Object value = JOptionPane.showInputDialog(null, 
+		                                           "Pick a taste", 
+		                                           "Tastes", 
+		                                            JOptionPane.QUESTION_MESSAGE, 
+		                                            null,
+		                                            options, 
+		                                            options[0]);
+
+		int index = tastesList.indexOf(value);
+		String taste = tastesList.get(index);
+		
+		if(a.equals("producers")){
+		sim.addUser(new Producer(name, password, taste));	
+		}
+		else if(a.equals("consumers")){
+		sim.addUser(new Consumer(name, password, taste));	
+		}}
+		
+	}
+
+// allows the addition of single user after simulation environment has been simulated
+public static void singleUser(String a){
+	String name = JOptionPane.showInputDialog("Enter "+a+"'s name: ");
+	
+	String password = JOptionPane.showInputDialog("Enter "+name+"'s password to be set: ");
+	
+	
+	
+	//tastesList.add("car");//only for testing
+	
+	Object[] options2 = tastesList.toArray();
+	Object value = JOptionPane.showInputDialog(null, 
+	                                           "Pick a taste", 
+	                                           "Tastes", 
+	                                            JOptionPane.QUESTION_MESSAGE, 
+	                                            null,
+	                                            options2, 
+	                                            options2[0]);
+
+	int index = tastesList.indexOf(value);
+	String taste = tastesList.get(index);
+	
+	if(a.equals("producers")){
+	sim.addUser(new Producer(name, password, taste));	
+	}
+	else if(a.equals("consumers")){
+	sim.addUser(new Consumer(name, password, taste));	
+	}
+	
+}
+
+
+/* 1.Populate the Network with a few hardcoded users 
+ * 2.Prompt the user to decide the no of tastes and then the types
+ * 3.Give the user the option to select the producers and consumers
+ * 4.User has to then input the details required to create these users
+ * 5.Ask user how many iterations of the simulations they want 
+ */
+public void data_prompt() {
+	        String in;
+			
+			//Scanner input = new Scanner(System.in);
+			
+			//Have then network populated by these few users 
+			/*sim.addUser(new Consumer("c1","pw","toy"));
+			sim.addUser(new Consumer("c2","pw","car"));
+			sim.addUser(new Consumer("c3","pw","book"));
+			sim.addUser(new Consumer("c4","pw","toy"));
+			sim.addUser(new Consumer("c5","pw","car"));
+			sim.addUser(new Consumer("c6","pw","book"));
+			
+			sim.addUser(new Producer("p1","pw","toy"));
+			sim.addUser(new Producer("p2","pw","car"));
+			sim.addUser(new Producer("p3","pw","book"));
+			sim.addUser(new Producer("p4","pw","toy"));
+			sim.addUser(new Producer("p5","pw","car"));
+			sim.addUser(new Producer("p6","pw","book"));
+			*/
+			
+			tastesList = new ArrayList<String>();
+			int tastes = Integer.parseInt(JOptionPane.showInputDialog("Enter number of different tastes: "));
+			
+			for(int i = 1;i <= tastes;i++){
+				in = JOptionPane.showInputDialog("Enter taste #"+i+": ");
+				
+				tastesList.add(in);
+			}
+			
+			multipleUsers("producers");
+			
+			multipleUsers("consumers");
+			
+			int iterations = Integer.parseInt(JOptionPane.showInputDialog("Enter number of simulation iterations desired: "));
+			//int iterations = input.nextInt();
+			sim.simulate(iterations);
+			
+	
+}
+public static void main(String args[]){
+	new SimulatorFrame();
+}
+}

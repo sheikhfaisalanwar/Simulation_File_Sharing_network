@@ -1,0 +1,112 @@
+import java.util.ArrayList;
+
+import java.util.Scanner;
+
+import javax.swing.DefaultListModel;
+
+import java.util.Random;
+
+
+public class Simulator {
+
+	//All Users and Documents are held in DLM
+	public DefaultListModel<User> users; 
+	public DefaultListModel<Document> docs;
+	
+	//List of all tastes defined by user
+	private static ArrayList<String> tastesList;
+	
+	//Integer defining total number of top documents
+	private int k;
+	
+	//Used to generate random number
+	private Random randGen;
+	
+	public Simulator(String name){
+		
+		//Initializing
+		users = new DefaultListModel<User>();
+		docs = new DefaultListModel<Document>();
+		randGen = new Random();
+		tastesList = new ArrayList<String>();
+	}
+	
+	//Add User to users DLM and add users taste to tastesList if it doesn't already exist
+	public void addUser(User u){
+		users.addElement(u);
+		if (!(tastesList.contains(u.getTaste())))tastesList.add(u.getTaste());
+	}
+	
+	//Remove User at particular index of User DLM
+	public void removeUser(int i){
+		if (i >= 0 && i < users.size()) {
+			users.remove(i);
+		}
+	}
+	
+	//Add document to Document DLM
+	public void addDoc(Document d){
+		docs.addElement(d);
+	}
+	
+	//Remove document at particular index of Document DLM
+	public void removeDoc(int i){
+		if (i >= 0 && i < docs.size()) {
+			docs.remove(i);
+		}
+	}
+	
+	//Add taste to List of Tastes
+	public void addTaste(String s){
+		tastesList.add(s);
+	}
+	
+	//Get Document at particular index of Documents DLM
+	public Document getDocs(int i){
+		if (i >= 0 && i < docs.size()) {
+			return docs.getElementAt(i);
+		}
+		return null;
+	}
+	
+	//Get User at particular index of Users DLM
+	public User getUsers(int i){
+		if (i >= 0 && i < users.size()) {
+			return users.getElementAt(i);
+		}
+		return null;	}
+
+	//Set Number for total Top Documents to be shown
+	public void setK(int i){
+		k = i;
+	}
+	
+	//Getter for Number of Total Top Documents
+	public int getK(){
+		return k;
+	}
+	
+	
+	
+	public ArrayList<String> getTastesList(){
+		return tastesList;
+	}
+	
+	public String toString() {
+		String s = "User(s):\n";
+		for (int i = 0; i < users.size(); i++) {
+			s += users.get(i).getType()+" "+users.get(i).getName()+" "+users.get(i).getTaste() + "\n";
+		}
+		return s;
+	}
+	
+	public void simulate(int numRounds, SimulatorFrame gui){
+		for (int j = 0; j < numRounds; j++){
+			User curr = users.get(randGen.nextInt(users.size()));
+			gui.appendTextArea("Simulation Cycle: " + (j+1) +"\n"+curr.getType() + " " + curr.getName() + " acting...\n"+ curr.getName() + "'s taste: " + curr.getTaste() + ".\n");
+			curr.act(this, gui);
+		}
+	}
+	
+	
+}

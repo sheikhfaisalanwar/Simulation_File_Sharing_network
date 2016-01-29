@@ -1,0 +1,173 @@
+package Milestones;
+import java.io.Serializable;
+import java.util.ArrayList;
+
+import javax.swing.DefaultListModel;
+
+import java.util.Random;
+
+
+/**
+ * This class depicts the behaviour of the Simulation
+ * @author Sheikh Faisal Anwar, Vanja Veselinovic, Nicholas Robidoux, Muhammad Kashif Siddiqui 
+ *
+ */
+public class Simulator implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	//All Users and Documents are held in DLM
+	private DefaultListModel<User> users; 
+	private DefaultListModel<Document> docs;
+	
+	//List of all tastes defined by user
+	private static ArrayList<String> tastesList;
+	
+	//Integer defining total number of top documents
+	private int k;
+	
+	//Used to generate random number
+	private Random randGen;
+	private int currIteration;
+	
+	
+	/**
+	 * Constructor for class
+	 * Initialize Simulation environment with a name
+	 * @param name
+	 */
+	public Simulator(String name){
+		
+		//Initializing
+		users = new DefaultListModel<User>();
+		docs = new DefaultListModel<Document>();
+		randGen = new Random();
+		tastesList = new ArrayList<String>();
+	}
+	
+	
+	
+	/**
+	 * Add User to users DLM and add users taste to tastesList if it doesn't already exist
+	 * @param u user being added to the environment
+	 */
+	public void addUser(User u){
+		users.addElement(u);
+		if (!(tastesList.contains(u.getTaste())))tastesList.add(u.getTaste());
+	}
+	
+
+	/**
+	 * Remove User at particular index of User DLM
+	 * @param i integer value of index
+	 */
+	public void removeUser(int i){
+		if (i >= 0 && i < users.size()) {
+			users.remove(i);
+		}
+	}
+	
+	
+	
+	/**
+	 * Add document to Document DLM
+	 * @param d document to be added
+	 */
+	public void addDoc(Document d){
+		docs.addElement(d);
+	}
+	
+	
+	/**
+	 * Remove document at particular index of Document DLM
+	 * @param i index at which document is located 
+	 */
+	public void removeDoc(int i){
+		if (i >= 0 && i < docs.size()) {
+			docs.remove(i);
+		}
+	}
+	
+	
+	/**
+	 * Add a new taste to List of Tastes
+	 * @param s String value of taste to be added
+	 */
+	public void addTaste(String s){
+		tastesList.add(s);
+	}
+	
+	
+	/**
+	 * Get list of documents
+	 * @return DefaultListModel of Documents
+	 */
+	public DefaultListModel<Document> getDocs(){
+		return docs;
+	}
+	
+	
+	/**
+	 * Get list of users
+	 * @return DefaultListModel of Users
+	 */
+	public DefaultListModel<User> getUsers(){
+		return users;
+	}
+	
+
+	
+	/**
+	 * Set Number for total Top Documents to be shown
+	 * @param i integer value of k
+	 */
+	public void setK(int i){
+		k = i;
+	}
+	
+	
+	/**
+	 * Getter for Number of Total Top Documents desired
+	 * @return integer value of k
+	 */
+	public int getK(){
+		return k;
+	}
+	
+	
+	/**
+	 * Getter for ArrayList of tastes
+	 * @return ArrayList<String> tastes
+	 */
+	public ArrayList<String> getTastesList(){
+		return tastesList;
+	}
+	
+	public String toString() {
+		String s = "User(s):\n";
+		for (int i = 0; i < users.size(); i++) {
+			s += users.get(i).getType()+" "+users.get(i).getName()+" "+users.get(i).getTaste() + "\n";
+		}
+		return s;
+	}
+	
+	public void simulate(int numRounds, SimulatorFrame gui){
+		for (int j = 0; j < numRounds; j++){
+			currIteration = j+1;
+			gui.iterateCountCycles();
+			User curr = users.get(randGen.nextInt(users.size()));
+			gui.appendTextArea("Simulation Cycle: " + (gui.getCountCycles()) +"\n"+curr.getType() + " " + curr.getName() + " acting...\n"+ curr.getName() + "'s taste: " + curr.getTaste() + ".\n");
+			curr.act(this, gui);
+			gui.undoSetEnabled();
+			gui.autoSave();
+		}
+	}
+	
+	public int getCycleNumber(){
+		return currIteration;
+	}
+	
+	
+}

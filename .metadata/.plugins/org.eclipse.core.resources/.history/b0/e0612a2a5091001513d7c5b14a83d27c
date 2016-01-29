@@ -1,0 +1,18 @@
+import java.util.ArrayList;
+import javax.swing.DefaultListModel;
+public interface User {		
+	public void like(Document document);//method to like documents
+	public void follow(User user);// method to follow users
+	public ArrayList<Document> getViewed();//method to display the documents viewed
+	public void addFollower(User user);//method add the some user that followed the current user object to the array 
+	public ArrayList<User> getFollowing();//method to display users followed
+	public ArrayList<Document> getLiked();//method to display documents liked
+	public ArrayList<User> getFollowers();//method to display the people currently following
+	public String getName();//returns name of user
+	public String getType();
+	public String getTaste();
+	public ArrayList<Integer> getPayoff();
+	public int getNumFollowers();
+	public DefaultListModel<Document> search(DefaultListModel<Document> d, int k, SimulatorFrame gui);//search for top k documents from a passed list of all of the documents (from network) excluding the ones that have already been viewed
+	public void act(Simulator n, SimulatorFrame gui);
+}

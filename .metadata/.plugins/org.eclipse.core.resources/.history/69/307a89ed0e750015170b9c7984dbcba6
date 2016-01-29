@@ -1,0 +1,57 @@
+import java.util.ArrayList;
+
+public class Consumer implements User {
+	
+	String name;
+	String password;
+
+	ArrayList<Documents> documents_liked = new ArrayList<Documents>();
+	ArrayList<Documents> documents_viewed = new ArrayList<Documents>();
+	ArrayList<String> tags_pref = new ArrayList<String>();
+	
+	public Consumer(String name, String password){
+		this.name = name;
+		this.password = password;
+	}
+	
+	
+	@Override
+	public void like() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void follow() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Documents display_viewed() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public User display_followed() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Documents display_liked() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	public User display_followers(){
+		return null;
+	}
+
+	@Override
+	public void search() {
+		// TODO Auto-generated method stub
+		
+	}
+
+}

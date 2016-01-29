@@ -1,0 +1,71 @@
+import org.jfree.chart.ChartPanel;
+
+import java.util.ArrayList;
+
+import javax.swing.JFrame;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
+public class Graph extends JFrame{
+	
+	private static final long serialVersionUID = 1L;
+	private User u; //user to show payoff for
+	private SimulatorFrame s; // particular instance of simulation/simulations
+
+	
+	/**
+	 * Graph constructor
+	 * @param applicationTitle: Title of new frame initialized
+	 * @param charTitle: Title of chart showing user for which the graph is for
+	 * @param user: User to show payoff for
+	 * @param sim: Particular instance of simulation/simulations
+	 */
+	public Graph(String applicationTitle, String charTitle, User user, SimulatorFrame sim){
+		super(applicationTitle);
+		this.u = user;
+		this.s = sim;
+		JFreeChart lineChart = ChartFactory.createXYLineChart(
+		         charTitle,
+		         "Iterations","Payoff",
+		         createDataset(u.getPayoff(),s.getIterations()),
+		         PlotOrientation.VERTICAL,
+		         true,true,false);
+		 
+	      ChartPanel chartPanel = new ChartPanel( lineChart );
+	      chartPanel.setPreferredSize( new java.awt.Dimension( 560 , 367 ) );
+	      setContentPane( chartPanel );
+	}
+	
+	/**
+	 * Populating graph using data from the user and no. of iterations
+	 * @param pa: Array List of payoffs
+	 * @param it: integer value of number of simulations conducted
+	 * @return data set to be used by chart
+	 */
+	private XYDataset createDataset(ArrayList<Integer> pa, int it )
+	   {
+		 final XYSeries myline = new XYSeries( "payoff" );  
+	     //DefaultCategoryDataset dataset = new DefaultCategoryDataset( );
+	     for (int i = 0; i < pa.size(); i++) {
+	    	 //cast used since XY dataset accept doubles not int
+	         myline.add((double) i*10,(double)pa.get(i));
+	     }     
+	     final XYSeriesCollection dataset = new XYSeriesCollection( );          
+	     dataset.addSeries(myline);          
+	     return dataset;
+	   }
+}
+	 
+	
+	
+	
+	
+	
+	
+
+

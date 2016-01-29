@@ -1,0 +1,828 @@
+package Milestones;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Stack;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.HeadlessException;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.Serializable;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.DefaultCaret;
+
+import org.jfree.ui.RefineryUtilities;
+
+/**
+ * This class depicts the visual representation of the Simulation (GUI
+ * components)
+ * 
+ * @author Sheikh Faisal Anwar, Vanja Veselnovic, Nicholas Robidoux, Muhammad
+ *         Kashif Siddiqui
+ *
+ */
+public class SimulatorFrame extends JFrame implements ActionListener, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private Simulator sim;
+
+	private JMenuItem clearText, save, load, undo, undoIter;
+	private JMenuItem buttonInitializeSim, buttonAddTastes, buttonAddProducers, buttonAddConsumers;
+	private JMenuItem editStrategy, viewFollowers, viewDocsLiked, viewNumFollowers, viewFollowing, viewDocsViewed,
+			viewGraph, delete;
+	private JMenuItem viewDocInfo;
+	private JMenu simMenu, userMenu, docMenu;
+	private JMenuBar menuBar;
+
+	private JSplitPane splitPane;
+
+	private JList<User> users1;
+	private JList<Document> documents;
+	public JList<Document> topkdocs;
+
+	private DefaultCaret caret;
+
+	private JTextArea information;
+
+	private JPanel panel; // Main Panel
+
+	private JPanel userPanel, documentPanel, topk; // Center panels of frame
+	private JScrollPane userScroller, documentScroller, infoScroller, topkScroller; // Center
+																					// panels
+																					// will
+																					// be
+																					// turned
+																					// to
+																					// scrollerpanes
+
+	private int iterations;
+
+	private Graph chart;
+
+	private RankingStrategy balancedRS, smartRS, likeHeavyRS, followHeavyRS, likeSimilarityHeavyRS,
+			followSimilarityHeavyRS, distanceHeavyRS;
+
+	private ArrayList<RankingStrategy> rankingStrategies;
+	private Stack<Integer> actionStack;
+	
+	private int countAction;
+	
+	private Stack<Integer> IterationStack;
+	
+	private int countIteration;
+
+	
+	/**
+	 * Constructor: Initialize simulation and simulator Define dimension,
+	 * initialize menu bar, buttons, text fields containing JLists, scroll bars
+	 * Add Action Listener Position GUI components inside the layout
+	 * 
+	 */
+	public SimulatorFrame() {
+		super();
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setSize(900, 600);
+
+		// create some ranking strategies
+
+		rankingStrategies = new ArrayList<RankingStrategy>();
+
+		balancedRS = new RankingStrategy("balanced", 1, 1, 1, 1, 1);
+		rankingStrategies.add(balancedRS);
+
+		smartRS = new RankingStrategy("smart", 1, 2, 0, 0, 1);
+		rankingStrategies.add(smartRS);
+
+		likeHeavyRS = new RankingStrategy("like heavy", 5, 1, 1, 1, 1);
+		rankingStrategies.add(likeHeavyRS);
+
+		followHeavyRS = new RankingStrategy("follow heavy", 1, 5, 1, 1, 1);
+		rankingStrategies.add(followHeavyRS);
+
+		likeSimilarityHeavyRS = new RankingStrategy("like similarity heavy", 1, 1, 5, 1, 1);
+		rankingStrategies.add(likeSimilarityHeavyRS);
+
+		followSimilarityHeavyRS = new RankingStrategy("follow similarity heavy", 1, 1, 1, 5, 1);
+		rankingStrategies.add(followSimilarityHeavyRS);
+
+		distanceHeavyRS = new RankingStrategy("distance heavy", 1, 1, 1, 1, 5);
+		rankingStrategies.add(distanceHeavyRS);
+
+		// initialize simulator
+		sim = new Simulator("Network 1");
+
+		// populate network
+		sim.addUser(new Consumer("c1", "pw", "toy", smartRS));
+		sim.addUser(new Consumer("c2", "pw", "car", smartRS));
+		sim.addUser(new Consumer("c3", "pw", "book", smartRS));
+		sim.addUser(new Consumer("c4", "pw", "toy", smartRS));
+		sim.addUser(new Consumer("c5", "pw", "car", smartRS));
+		sim.addUser(new Consumer("c6", "pw", "book", smartRS));
+
+		sim.addUser(new Producer("p1", "pw", "toy", smartRS));
+		sim.addUser(new Producer("p2", "pw", "car", smartRS));
+		sim.addUser(new Producer("p3", "pw", "book", smartRS));
+		sim.addUser(new Producer("p4", "pw", "toy", smartRS));
+		sim.addUser(new Producer("p5", "pw", "car", smartRS));
+		sim.addUser(new Producer("p6", "pw", "book", smartRS));
+
+		// Text Area that will be used as a console output to display
+		// information
+		information = new JTextArea(10, 10);
+
+		// Caret to ensure it scrolls to the botton of the text area
+		// automatically upon apend
+		caret = (DefaultCaret) information.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+		information.setBorder(new EmptyBorder(10, 10, 10, 10));
+		information.setEditable(false);
+		information.setText("Simulation Cycle 0\nPlease Select 'Simulate n cycles' to begin\n\n");
+
+		panel = new JPanel(new BorderLayout()); // Main panel to hold all other
+												// panels
+		userPanel = new JPanel(new BorderLayout()); // User Panel
+		topk = new JPanel(new BorderLayout()); // Top Documents Panel
+		documentPanel = new JPanel(new BorderLayout()); // All Documents Panel
+
+		add(panel);
+
+		// Populating User Panel with users in simulator that can be selected
+		users1 = new JList<>(sim.getUsers());
+		userPanel.add(new JLabel("User(s)"), BorderLayout.NORTH);
+		userPanel.add(users1, BorderLayout.CENTER);
+		users1.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		userPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+		// Populating Document Panel with all documents present in the simulator
+		// that can be selected
+		documents = new JList<>(sim.getDocs());
+		documentPanel.add(new JLabel("Document(s)"), BorderLayout.NORTH);
+		documentPanel.add(documents, BorderLayout.CENTER);
+		documents.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		documentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+		// Convert panels to Scroll Panes so they don't have to be resized
+		// (scroll bars added)
+		userScroller = new JScrollPane(userPanel);
+		documentScroller = new JScrollPane(documentPanel);
+		topkScroller = new JScrollPane(topk);
+
+		// Set panels sizes to be of equal widths and add a split between User
+		// panel and Document panel
+		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, userScroller, documentScroller);
+		splitPane.setOneTouchExpandable(true);
+
+		topkScroller.setPreferredSize(new Dimension(300, 300));
+		splitPane.setDividerLocation(300);
+
+		// Panels added to center area of window
+		panel.add(splitPane, BorderLayout.CENTER);
+		panel.add(topkScroller, BorderLayout.EAST);
+
+		// Convert information panel to Scroll Pane and set at the bottom of
+		// window
+		infoScroller = new JScrollPane(information);
+		infoScroller.setViewportView(information);
+		panel.add(infoScroller, BorderLayout.SOUTH);
+
+		// Menu initializations
+		menuBar = new JMenuBar();
+		this.setJMenuBar(menuBar);
+
+		simMenu = new JMenu("Simulator");
+		userMenu = new JMenu("User");
+		docMenu = new JMenu("Document");
+
+		menuBar.add(simMenu);
+		menuBar.add(userMenu);
+		menuBar.add(docMenu);
+
+		// Button Initializations
+		clearText = new JMenuItem("Clear Text Area");
+
+		buttonInitializeSim = new JMenuItem("Simulate n cycles");
+		buttonAddTastes = new JMenuItem("Add tastes");
+		buttonAddProducers = new JMenuItem("Add producers");
+		buttonAddConsumers = new JMenuItem("Add consumers");
+		save = new JMenuItem("Save simulation");
+		load = new JMenuItem("Load Simulation");
+		undo = new JMenuItem("Undo Previous Action");
+		undoIter = new JMenuItem("Go back an itertion");
+		
+
+		editStrategy = new JMenuItem("Change ranking strategy");
+		viewFollowers = new JMenuItem("View Followers");
+		viewDocsLiked = new JMenuItem("View Documents Likes");
+		viewNumFollowers = new JMenuItem("Number of Followers");
+		viewFollowing = new JMenuItem("View Following");
+		viewDocsViewed = new JMenuItem("View Documents Viewed");
+		viewGraph = new JMenuItem("View Payoff Graph");
+		delete = new JMenuItem("Delete User");
+
+		viewDocInfo = new JMenuItem("View Likers");
+
+		// Adding action listeners
+		clearText.addActionListener(this);
+		save.addActionListener(this);
+		load.addActionListener(this);
+		undo.addActionListener(this);
+		undoIter.addActionListener(this);
+		
+
+		buttonInitializeSim.addActionListener(this);
+		buttonAddTastes.addActionListener(this);
+		buttonAddProducers.addActionListener(this);
+		buttonAddConsumers.addActionListener(this);
+
+		editStrategy.addActionListener(this);
+		viewFollowers.addActionListener(this);
+		viewDocsLiked.addActionListener(this);
+		viewNumFollowers.addActionListener(this);
+		viewFollowing.addActionListener(this);
+		viewDocsViewed.addActionListener(this);
+		viewGraph.addActionListener(this);
+		delete.addActionListener(this);
+
+		viewDocInfo.addActionListener(this);
+
+		// Add buttons to menus
+		simMenu.add(buttonInitializeSim);
+		simMenu.add(clearText);
+		simMenu.add(buttonAddTastes);
+		simMenu.add(buttonAddProducers);
+		simMenu.add(buttonAddConsumers);
+		simMenu.add(save);
+		simMenu.add(load);
+		simMenu.add(undo);
+		simMenu.add(undoIter);
+		
+		userMenu.add(delete);
+		userMenu.add(editStrategy);
+		userMenu.add(viewDocsLiked);
+		userMenu.add(viewFollowers);
+		userMenu.add(viewNumFollowers);
+		userMenu.add(viewFollowing);
+		userMenu.add(viewDocsViewed);
+		userMenu.add(viewGraph);
+		
+
+		docMenu.add(viewDocInfo);
+		
+		countAction = 0;
+		
+		actionStack = new Stack();
+
+		// Button(s) that user should be able to use before initializing
+		// simulation
+		undo.setEnabled(false);
+		undoIter.setEnabled(false);
+		viewDocInfo.setEnabled(false);
+		
+		this.setVisible(true);
+	}
+
+	// Return User Panel
+	public JPanel getListPanel() {
+		return userPanel;
+	}
+
+	// Return Main Panel
+	public JPanel getGUIPanel() {
+		return panel;
+	}
+
+	// Set Text Area to a particular string (Overwrites whatever is already
+	// written)
+	public void setTextArea(String text) {
+		information.setText(text);
+	}
+
+	// Append Text Area with string provided (Add onto whatever is already
+	// written)
+	public void appendTextArea(String text) {
+		information.append(text);
+	}
+
+	// Returns the panel being used to display the Top K Documents
+	public JPanel getTopkPanel() {
+		return topk;
+	}
+
+	// Returns the JList of Top K Documents
+	public JList<Document> getTopkDocs() {
+		return topkdocs;
+	}
+
+	/**
+	 * Method to get the number of iterations that were implemented during
+	 * simulations
+	 * 
+	 * @return integer value
+	 */
+	public int getIterations() {
+		return iterations;
+	}
+
+	/**
+	 * Method to set iterations during the initialization of simulation
+	 * 
+	 * @param i
+	 *            set the value of number of times we want to repeat the
+	 *            simulation for
+	 */
+	public void setIterations(int i) {
+		iterations = i;
+	}
+
+	public int checkInt(String text) {
+		int number = 0;
+		if (text == null) {
+			// Cancel was pressed
+		} else if (text.equals("")) { // Enter with no value
+			JOptionPane.showMessageDialog(null, "No Value Entered", "Error", JOptionPane.ERROR_MESSAGE);
+		} else {
+			try {
+				number = Integer.parseInt(text);
+				if (number <= 0) { // Negative numeric value
+					JOptionPane.showMessageDialog(null, "INSERT POSITIVE INTEGER", "Error", JOptionPane.ERROR_MESSAGE);
+				}
+			} catch (Exception e) { // Non-integer input
+				JOptionPane.showMessageDialog(null, "INSERT NUMBERIC VALUE", "Error", JOptionPane.ERROR_MESSAGE);
+
+			}
+
+		}
+		return number;
+
+	}
+
+	/**
+	 * Defines all the actions that would be implemented when buttons are
+	 * pressed
+	 * 
+	 * @param event
+	 *            that triggers the action
+	 */
+	@Override
+	public void actionPerformed(ActionEvent event) {
+
+		// Handles Simulator initializations
+		if (event.getSource() == buttonInitializeSim) {
+			viewDocInfo.setEnabled(true);
+			undo.setEnabled(true);
+			undoIter.setEnabled(true);
+			undoSave();
+			
+			String text1 = JOptionPane.showInputDialog("Enter the top k documents to be viewed: ");
+			int k = checkInt(text1);
+
+			if (k == 0) {
+				return;
+			}
+
+			sim.setK(k);
+
+			String text2 = JOptionPane.showInputDialog("Enter number of simulation iterations desired: ");
+			int simulations = checkInt(text2);
+			for( int i = 0; i>= simulations; i++){
+				saveIteration();
+			}
+			sim.simulate(simulations, this);
+			
+			
+
+		}
+
+		// Clears Text Field (Window Console Output cleared)
+		else if (event.getSource() == clearText) {
+			undoSave();
+			setTextArea("");
+		}
+
+		// Add more tastes [First choose number of tastes -> make tastes
+		// (including new ones)]
+		else if (event.getSource() == buttonAddTastes) {
+			undoSave();
+
+			String text = JOptionPane.showInputDialog(null, "Enter number of different tastes: ", "Tastes",
+					JOptionPane.INFORMATION_MESSAGE);
+			int tastes = checkInt(text);
+
+			for (int i = 1; i <= tastes; i++) {
+				sim.getTastesList().add(JOptionPane.showInputDialog("Enter taste #" + i + ": "));
+			}
+		}
+
+		// Handles creation of new user(s) of type Producer
+		else if (event.getSource() == buttonAddProducers) {
+			undoSave();
+			multipleUsers("producer", sim);
+		}
+
+		// Handles creation of single new user(s) of type Consumer
+		else if (event.getSource() == buttonAddConsumers) {
+			undoSave();
+			multipleUsers("consumer", sim);
+		}
+
+		// View and edit the ranking strategy for this user
+		else if (event.getSource() == editStrategy) {
+			undoSave();
+
+			User selected = (User) users1.getSelectedValue();
+			if (selected == null) {
+				JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			} else {
+
+				Object[] options = rankingStrategies.toArray(); // rsOptions.toArray();
+
+				selected.setRankingStrategy(
+						(RankingStrategy) JOptionPane.showInputDialog(null, "Pick a ranking strategy",
+								"Ranking Strategies", JOptionPane.QUESTION_MESSAGE, null, options, options[0]));
+			}
+		}
+
+		// View selected User's Follower Count in Text Area
+		else if (event.getSource() == viewNumFollowers) {
+			undoSave();
+			User selected = (User) users1.getSelectedValue();
+			if (selected == null) {
+				JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			appendTextArea(selected.getName() + " has " + selected.getNumFollowers() + " follower(s)!\n");
+		}
+
+		// View selected User's Followers' names in Text Area
+		else if (event.getSource() == viewFollowers) {
+			undoSave();
+			User selected = (User) users1.getSelectedValue();
+			if (selected == null) {
+				JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			// JOptionPane.showMessageDialog(null, selected.getName()+" has
+			// "+selected.getNumFollowers()+" follower(s)!", "Followers",
+			// JOptionPane.INFORMATION_MESSAGE);
+			if (selected.getFollowers().size() == 0) {
+				JOptionPane.showMessageDialog(null, selected.getName() + " has no followers yet!", "No Followers",
+						JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				String s = "";
+				appendTextArea(selected.getName() + "'s Follower(s):\n");
+				for (User user : selected.getFollowers()) {
+					s = s + user.getName() + ", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				appendTextArea(s + "\n");
+			}
+		}
+		
+		//Delete selected User
+		else if (event.getSource() == delete){
+			undoSave();
+			int x =  users1.getSelectedIndex();
+			if (users1.getSelectedIndex() == -1) {
+				JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			else{
+				sim.removeUser(x);
+			}	
+			
+		}
+
+		// View users being followed by selected User
+		else if (event.getSource() == viewFollowing) {
+			undoSave();
+			User selected = (User) users1.getSelectedValue();
+			if (selected == null) {
+				JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			if (selected.getFollowers().size() == 0) {
+				JOptionPane.showMessageDialog(null, selected.getName() + " has not followed anyone yet!",
+						"No Followers", JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				String s = "";
+				appendTextArea(selected.getName() + " has Followed:\n");
+				for (User user : selected.getFollowing()) {
+					s = s + user.getName() + ", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				appendTextArea(s + "\n");
+			}
+		}
+
+		// View selected User's liked Documents
+		else if (event.getSource() == viewDocsLiked) {
+			undoSave();
+			User selected = (User) users1.getSelectedValue();
+			if (selected == null) {
+				JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			if (selected.getLiked().size() == 0) {
+				JOptionPane.showMessageDialog(null, selected.getName() + " has not liked any documents yet!",
+						"No Document Liked", JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				String s = "";
+				appendTextArea(selected.getName() + " liked the following Document(s):\n");
+				for (Document doc : selected.getLiked()) {
+					s = s + doc.getName() + ", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				appendTextArea(s + "\n");
+			}
+
+		}
+
+		// View selected User's Documents viewed
+		else if (event.getSource() == viewDocsViewed) {
+			undoSave();
+			User selected = (User) users1.getSelectedValue();
+			if (selected == null) {
+				JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			if (selected.getLiked().size() == 0) {
+				JOptionPane.showMessageDialog(null, selected.getName() + " has not viewed any documents yet!",
+						"No Document Liked", JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				String s = "";
+				appendTextArea(selected.getName() + " viewed the following Documents(s):\n");
+				for (Document doc : selected.getViewed()) {
+					s = s + doc.getName() + ", ";
+				}
+				s = s.substring(0, s.length() - 2);
+				appendTextArea(s + "\n");
+			}
+
+		}
+
+		// View payoff graph of selected user
+		else if (event.getSource() == viewGraph) {
+			User selected = (User) users1.getSelectedValue();
+			if (selected == null) {
+				JOptionPane.showMessageDialog(null, "NO USER SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			} else {
+				chart = new Graph("User:" + selected.getName() + "", "Payoff vs Iterations", selected, this);
+				chart.pack();
+				RefineryUtilities.centerFrameOnScreen(chart);
+				chart.setVisible(true);
+				chart.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+			}
+
+		}
+
+		// View selected Document(s)'s likers' Names (Can select document from
+		// All Document and Top Document)
+		else if (event.getSource() == viewDocInfo) {
+			undoSave();
+			Document selected1 = (Document) documents.getSelectedValue();
+			Document selected2 = (Document) topkdocs.getSelectedValue();
+			if (selected1 == null && selected2 == null) {
+				JOptionPane.showMessageDialog(null, "NO DOCUMENT(S) SELECTED", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			if (selected1 == null && selected2 != null) {
+				appendTextArea("Top Document " + selected2.getLikersString());
+			} else if (selected2 == null && selected1 != null) {
+				appendTextArea("Document " + selected1.getLikersString());
+			} else {
+				appendTextArea("Top Document " + selected2.getLikersString());
+				appendTextArea("Document " + selected1.getLikersString());
+
+			}
+		}
+		
+		// what happens when save is clicked
+		else if (event.getSource() == save) {
+			
+			String s = JOptionPane.showInputDialog("Enter filename: ");
+
+			s = s + ".txt";
+
+			this.writeObject(s);
+
+		}
+
+		// what happens when load is clicked
+		else if (event.getSource() == load) {
+			// System.out.println("works");
+
+			
+			
+				String r = JOptionPane.showInputDialog("Enter filename to be loaded: ");
+				r = r + ".txt";
+				File f = new File(r);
+				if(f.exists() && !f.isDirectory()) { //check if file exists
+					SimulatorFrame frame = this.readObject(r);
+					this.dispose();
+					frame.pack();
+					frame.setVisible(true);
+				    
+				}
+				else{//if not show error message
+					JOptionPane.showMessageDialog(null, "File does not exist! ", null, JOptionPane.ERROR_MESSAGE);
+				}
+
+		}
+		
+		else if(event.getSource() == undo){
+				
+				int i = actionStack.pop() -1;
+				System.out.println("countActionss" + i);
+				String name = "previousAction" + i + ".txt";
+				File f = new File(name);
+				if(f.exists() && !f.isDirectory()) { //check if file exists
+					SimulatorFrame frame = this.readObject(name);
+					this.dispose();
+					frame.pack();
+					frame.setVisible(true);
+				    
+				}
+				else{//if not show error message
+					undo.setEnabled(false);
+					JOptionPane.showMessageDialog(null, "No more actions to undo! ", null, JOptionPane.ERROR_MESSAGE);
+				}
+				
+		}
+		
+		else if(event.getSource() == undoIter){
+			int i = IterationStack.pop() -1;
+			//System.out.println("countActionss" + i);
+			String name = "previousIteration" + i + ".txt";
+			File f = new File(name);
+			if(f.exists() && !f.isDirectory()) { //check if file exists
+				SimulatorFrame frame = this.readObject(name);
+				this.dispose();
+				frame.pack();
+				frame.setVisible(true);
+			    
+			}
+			else{//if not show error message
+				undoIter.setEnabled(false);
+				JOptionPane.showMessageDialog(null, "No more actions to undo! ", null, JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+
+	public ArrayList<String> getRankingStrategyStringArray() {
+		ArrayList<String> a = new ArrayList<String>();
+		for (RankingStrategy rs : rankingStrategies) {
+			a.add(rs.getName());
+		}
+		return a;
+	}
+	
+	//method to save the state at each iteration step
+	public void saveIteration(){
+		undoIter.setEnabled(true);
+		countIteration++;
+		IterationStack.push(countIteration);
+		//System.out.println("countActionss" + countIteration);
+		SimulatorFrame f1 = this;
+		String name = "previousIteration" + countIteration + ".txt";
+		f1.writeObject(name);
+		}
+	
+	
+	// save to file for each action performed
+	//used every time any state of the simulation changes
+	public void undoSave(){
+		undo.setEnabled(true);
+		countAction++;
+		actionStack.push(countAction);
+		//System.out.println("countActionss" + countAction);
+		SimulatorFrame f1 = this;
+		String name = "previousAction" + countAction + ".txt";
+		f1.writeObject(name);
+		}
+
+	//read from text file given by parameter
+	public SimulatorFrame readObject(String file) {
+		try {
+
+			ObjectInputStream oStream = new ObjectInputStream(new FileInputStream(file));
+			
+			SimulatorFrame frame = (SimulatorFrame) oStream.readObject();
+			oStream.close();
+			return frame;
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "File does not exist! ", null, JOptionPane.ERROR_MESSAGE);
+
+		}
+		return null;
+	}
+
+	
+	//write to text file with parameter text file given
+	public void writeObject(String file) {
+		SimulatorFrame frame = this;
+		try {
+			ObjectOutputStream oStream = new ObjectOutputStream(new FileOutputStream(file));
+			oStream.writeObject(frame);
+			oStream.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Method to add multiple users at the start of the simulation
+	 * 
+	 * @param a
+	 *            which describes the type( Producer or Consumer)
+	 * @param s
+	 *            simulation environment which the user is being added to
+	 */
+	public void multipleUsers(String a, Simulator s) {
+
+		String dialog = JOptionPane.showInputDialog("Enter number of " + a + "s:");
+		int numUsers = checkInt(dialog);
+
+		// int numUsers = Integer.parseInt(JOptionPane.showInputDialog("Enter
+		// number of "+a+"s:"));
+
+		for (int i = 1; i <= numUsers; i++) {
+
+			// prompt user for name, password and taste for each user
+			String name = JOptionPane.showInputDialog("Enter " + a + " #" + i + "'s name: ");
+			String password = JOptionPane.showInputDialog("Enter " + name + "'s password to be set: ");
+
+			// Options pane doesn't accept arrayList so casting that into
+			// ListModel takes a bit of work
+			ArrayList<String> tasteOptions = s.getTastesList();
+			tasteOptions.add("Enter new taste");
+			Object[] options = tasteOptions.toArray();
+
+			Object value = JOptionPane.showInputDialog(null, "Pick a taste", "Tastes", JOptionPane.QUESTION_MESSAGE,
+					null, options, options[0]);
+
+			String taste = "";
+			if (value == "Enter new taste")
+				taste = JOptionPane.showInputDialog("Enter taste: ");
+			else {
+				int index = s.getTastesList().indexOf(value);
+				taste = s.getTastesList().get(index);
+			}
+
+			User u;
+			if (a.equals("producer")) {
+				u = new Producer(name, password, taste, smartRS);
+			} else {
+				u = new Consumer(name, password, taste, smartRS);
+			}
+			sim.addUser(u);
+			panel.revalidate();
+			panel.repaint();
+		}
+
+	}
+
+	@Override
+	public String toString() {
+		return "SimulatorFrame [sim=" + sim + ", clearText=" + clearText + ", buttonInitializeSim="
+				+ buttonInitializeSim + ", buttonAddTastes=" + buttonAddTastes + ", buttonAddProducers="
+				+ buttonAddProducers + ", buttonAddConsumers=" + buttonAddConsumers + ", editStrategy=" + editStrategy
+				+ ", viewFollowers=" + viewFollowers + ", viewDocsLiked=" + viewDocsLiked + ", viewNumFollowers="
+				+ viewNumFollowers + ", viewFollowing=" + viewFollowing + ", viewDocsViewed=" + viewDocsViewed
+				+ ", viewGraph=" + viewGraph + ", viewDocInfo=" + viewDocInfo + ", simMenu=" + simMenu + ", userMenu="
+				+ userMenu + ", docMenu=" + docMenu + ", menuBar=" + menuBar + ", splitPane=" + splitPane + ", users1="
+				+ users1 + ", documents=" + documents + ", topkdocs=" + topkdocs + ", caret=" + caret + ", information="
+				+ information + ", panel=" + panel + ", userPanel=" + userPanel + ", documentPanel=" + documentPanel
+				+ ", topk=" + topk + ", userScroller=" + userScroller + ", documentScroller=" + documentScroller
+				+ ", infoScroller=" + infoScroller + ", topkScroller=" + topkScroller + ", iterations=" + iterations
+				+ ", chart=" + chart + ", balancedRS=" + balancedRS + ", smartRS=" + smartRS + ", likeHeavyRS="
+				+ likeHeavyRS + ", followHeavyRS=" + followHeavyRS + ", likeSimilarityHeavyRS=" + likeSimilarityHeavyRS
+				+ ", followSimilarityHeavyRS=" + followSimilarityHeavyRS + ", distanceHeavyRS=" + distanceHeavyRS
+				+ ", rankingStrategies=" + rankingStrategies + "]";
+	}
+
+	/**
+	 * Main Create a SimulatorFrame
+	 *
+	 */
+	public static void main(String args[]) {
+		SwingUtilities.invokeLater(new Runnable() {
+
+			@Override
+			public void run() {
+				new SimulatorFrame().setVisible(true);
+			}
+
+		});
+	}
+
+}

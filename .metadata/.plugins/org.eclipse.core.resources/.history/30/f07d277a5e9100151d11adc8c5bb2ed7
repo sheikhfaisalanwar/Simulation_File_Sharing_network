@@ -1,0 +1,79 @@
+import java.util.*;
+public class Document implements Comparable{
+	private String tag;
+	private Producer uploader;
+	private String name;
+	private int searchRelevance;//in each search this is calculated for the current user, and the documents are ranked by it
+	private int likes;//no of likes
+	protected ArrayList<User> likers = new ArrayList<User>();
+	private ArrayList<String> messages;
+
+	public Document(String name, Producer user, String tag){
+		this.name = name;
+		this.uploader = user;
+		this.tag = tag;
+		likes = 0;
+		messages = new ArrayList<String>();
+	}
+	public void like(User u){
+		if(!(likers.contains(u))){
+			likers.add(u);
+			likes++;
+		}
+	}
+	public ArrayList<User> getLikers(){
+		return likers;
+	}
+	public String getLikersString(){
+		String s = "'"+name+"'"+" is Liked by:\n";
+		for(User u: likers){
+			s += u.getName() + ", ";
+		}
+		s = s.substring(0, s.length() - 2);
+		s = s+"\n";
+		return s;
+	}
+	public String getName(){
+		return name;
+	}
+	public String getTag(){
+		return tag;
+	}
+	public void appendMessage(String s){
+		messages.add(s);
+	}
+	public void setMessage(String s){
+		messages.clear();
+		messages.add(s);
+	}
+	public ArrayList<String> getMessages(){
+		return messages;
+	}
+	public int getSearchRelevance(){
+		return searchRelevance;
+	}
+	public void setSearchRelevance(int x){
+		searchRelevance = 0;
+	}
+	public void increaseSearchRelevanceBy(int x){
+		searchRelevance += x;
+	}
+	public User getUploader(){
+		return uploader;
+	}
+	public void addUser(User user){//add the user that has liked the document to the array list
+		likers.add(user);
+	}
+	public int getNumLikes(){//count the number of users that have liked the document
+		return likes;
+	}
+	
+	public String toString() {
+		return " "+name+" [ Uploader: "+uploader.getName()+" ], Likes: "+getNumLikes()+"   ";
+	}
+	@Override
+	public int compareTo(Object d){
+	     return(((Document) d).searchRelevance - searchRelevance);
+	}
+
+}
